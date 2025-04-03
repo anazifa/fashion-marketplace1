@@ -4,9 +4,8 @@ import axios from 'axios';
 interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  role: 'USER' | 'SELLER';
+  name: string;
+  role: string;
 }
 
 interface AuthState {
@@ -16,56 +15,68 @@ interface AuthState {
 }
 
 export const useAuth = () => {
-  const [state, setState] = useState<AuthState>({
+  const [authState, setAuthState] = useState<AuthState>({
     user: null,
     loading: true,
     error: null,
   });
 
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setAuthState({ user: null, loading: false, error: null });
+          return;
+        }
+
+        const response = await axios.get('/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setAuthState({
+          user: response.data,
+          loading: false,
+          error: null,
+        });
+      } catch (error) {
+        setAuthState({
+          user: null,
+          loading: false,
+          error: 'Authentication failed',
+        });
+      }
+    };
+
     checkAuth();
   }, []);
-
-  const checkAuth = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setState({ user: null, loading: false, error: null });
-        return;
-      }
-
-      const response = await axios.get('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setState({ user: response.data, loading: false, error: null });
-    } catch (error) {
-      setState({ user: null, loading: false, error: 'Authentication failed' });
-    }
-  };
 
   const login = async (email: string, password: string) => {
     try {
       const response = await axios.post('/api/auth/login', { email, password });
       const { token, user } = response.data;
       localStorage.setItem('token', token);
-      setState({ user, loading: false, error: null });
+      setAuthState({ user, loading: false, error: null });
       return true;
     } catch (error) {
-      setState({ user: null, loading: false, error: 'Login failed' });
+      setAuthState({
+        user: null,
+        loading: false,
+        error: 'Login failed',
+      });
       return false;
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
-    setState({ user: null, loading: false, error: null });
+    setAuthState({ user: null, loading: false, error: null });
   };
 
   return {
-    user: state.user,
-    loading: state.loading,
-    error: state.error,
+    user: authState.user,
+    loading: authState.loading,
+    error: authState.error,
     login,
     logout,
   };

@@ -13,7 +13,8 @@ import {
   Bar,
 } from 'recharts';
 import { DatePicker } from 'antd';
-import moment from 'moment';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 
 interface DailySales {
   [date: string]: {
@@ -42,7 +43,7 @@ const Analytics: React.FC = () => {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<[moment.Moment, moment.Moment] | null>(null);
+  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
 
   const fetchAnalytics = async () => {
     try {
@@ -50,8 +51,8 @@ const Analytics: React.FC = () => {
       const params: { startDate?: string; endDate?: string } = {};
       
       if (dateRange) {
-        params.startDate = dateRange[0].format('YYYY-MM-DD');
-        params.endDate = dateRange[1].format('YYYY-MM-DD');
+        params.startDate = dateRange[0]?.format('YYYY-MM-DD');
+        params.endDate = dateRange[1]?.format('YYYY-MM-DD');
       }
 
       const response = await axios.get('/api/seller/analytics', { params });
